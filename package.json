@@ -1,0 +1,21 @@
+{
+  "name": "puppeteer-parser",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "puppeteer-parser"
+  },
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "dotenv": "^16.3.2",
+    "puppeteer": "^21.7.0",
+    "puppeteer-core": "^21.7.0"
+  }
+}
