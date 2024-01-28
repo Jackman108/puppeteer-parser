@@ -19,7 +19,7 @@ dotenv.config();
         });
 
         // Переход на указанный URL
-        const url = 'https://spb.hh.ru/search/vacancy?L_save_area=true&text=React+frontend&excluded_text=&salary=&currency_code=RUR&experience=doesNotMatter&schedule=remote&order_by=salary_desc&search_period=3&items_on_page=100';
+        const url = 'https://spb.hh.ru/search/vacancy?L_save_area=true&text=React+developer&search_field=name&excluded_text=&salary=&currency_code=RUR&experience=doesNotMatter&schedule=remote&order_by=salary_desc&search_period=30&items_on_page=100';
         await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
 
@@ -77,6 +77,7 @@ dotenv.config();
         let pages = 7;// Предполагаемое количество страниц для обработки
         let idx = 0;// Счётчик обработанных страниц
         let successfullySubmittedFormsCount = 0; // Счётчик успешно отправленных форм
+        let unsuccessfullySubmittedFormsCount = 0; // Счётчик неуспешно отправленных форм
         let successfullySubmittedFormsIndexes = new Set(); // Хранилище индексов успешно отправленных форм
 
         // Цикл обработки страниц
@@ -84,21 +85,18 @@ dotenv.config();
             try {
                 // Задержка для стабилизации контента
                 console.log(`Обрабатываем страницу ${idx + 1} из ${pages}`);
-                await new Promise(r => setTimeout(r, 10000));
+                await new Promise(r => setTimeout(r, 2000));
 
                 let vacancyElementsSelector = await page.$$('[data-qa="vacancy-serp__vacancy_response"]');
                 if (vacancyElementsSelector.length > 0) {
-                    console.log('Число вакансий на странице:', vacancyElementsSelector.length);
 
                     for (let vacancyIndex = 0; vacancyIndex < vacancyElementsSelector.length; vacancyIndex++) {
                         const vacancy = vacancyElementsSelector[vacancyIndex];
                         const button = await vacancy.$('span');
                         const text = await page.evaluate(btn => btn.textContent, button);
-
                         if (text.includes('Откликнуться') && !successfullySubmittedFormsIndexes.has(vacancyIndex)) {
                             await new Promise(r => setTimeout(r, 1000));
                             await vacancy.click();
-                            console.log('Откликнулся на вакансию номер:', vacancyIndex + 1);
 
                             // Селекторы для модального окна и кнопки "Все равно откликнуться"
                             const relocationModalSelector = '.bloko-modal .bloko-modal-header [data-qa="relocation-warning-title"]';
@@ -108,8 +106,8 @@ dotenv.config();
                                 relocationModalSelector,
                                 { visible: true, timeout: 30000 }).catch(() => null);
 
+                            // Проверяем содержимое модального окна
                             if (relocationModalHandle) {
-                                // Проверяем содержимое модального окна
                                 const modalContent = await page.evaluate(titleModal => titleModal.textContent, relocationModalHandle);
                                 if (modalContent.includes('Вы откликаетесь на вакансию в другой стране')) {
                                     await new Promise(r => setTimeout(r, 1000));
@@ -125,69 +123,68 @@ dotenv.config();
                             const coverLetterInputSelector = '[data-qa="vacancy-response-popup-form-letter-input"]';
 
                             // Проверяем наличие и видимость модального окна
-                            const isModalVisible = await page.$(
+                            await page.waitForSelector(
                                 responseModalSelector,
-                                { visible: true, timeout: 30000 }
-                            ).catch(() => null);
+                                { visible: true, timeout: 30000 });
+                            await new Promise(r => setTimeout(r, 1000));
 
-                            const currentPageUrl = page.url();
-                            const pageUrlTrue = 'https://spb.hh.ru/search/vacancy';
-                            const pageUrlFalse = 'https://spb.hh.ru/applicant/vacancy_response';
+                            // Нажимаем кнопку для открытия поля сопроводительного письма
+                            const coverLetterButtonHandle = await page.waitForSelector(
+                                coverLetterToggleSelector,
+                                { visible: true, timeout: 30000 }).catch(() => null);
 
-                            if (isModalVisible) {
-                                console.log('Модальное окно "Отклик на вакансию" открыто');
+                            if (coverLetterButtonHandle) {
+                                await coverLetterButtonHandle.click()
+                                console.log('Нажата кнопка "Сопроводительное письмо"');
+                                await page.waitForSelector(coverLetterInputSelector, { visible: true });
+                            }
 
-                                if (currentPageUrl.includes(pageUrlTrue) &&  !currentPageUrl.includes(pageUrlFalse)) {
-                                    // Проверяем содержимое модального окна
-                                    console.log('Адрес страницы соответствует условиям');
+                            // Вводим сопроводительное письмо
+                            await page.type(coverLetterInputSelector, coverLetter);
+                            console.log('Введено сопроводительное письмо');
 
-                                    await new Promise(r => setTimeout(r, 1000));
+                            // Кликаем на кнопку "Откликнуться" для отправки формы
+                            await page.click(responseSubmitSelector)
+                            console.log('Отправки формы на вакансию:', vacancyIndex + 1);
 
-                                    // Нажимаем кнопку для открытия поля сопроводительного письма
-                                    const coverLetterButtonHandle = await page.waitForSelector(
-                                        coverLetterToggleSelector,
-                                        { visible: true, timeout: 30000 }).catch(() => null);
+                            // Добавляем условие на основе наличия блока textarea_invalid
+                            const isInvalidTextareaVisible = await page.evaluate(() => {
+                                const textarea = document.querySelector('textarea');
+                                return textarea && textarea.classList.contains('bloko-textarea_invalid');
+                            });
 
-                                    if (coverLetterButtonHandle) {
-                                        // Нажимаем кнопку "Сопроводительное письмо"
-                                        await coverLetterButtonHandle.click()
-                                        console.log('Нажата кнопка "Сопроводительное письмо"');
-                                        await page.waitForSelector(coverLetterInputSelector, { visible: true });
-                                    }
+                            // Добавляем условие на основе наличия блока radio_invalid
+                            const isInvalidRadioVisible = await page.evaluate(() => {
+                                const radioLabel = document.querySelector('label.bloko-radio');
+                                return radioLabel && radioLabel.classList.contains('bloko-radio_invalid');
+                            });
 
-                                    // Вводим сопроводительное письмо
-                                    await page.type(coverLetterInputSelector, coverLetter);
-                                    console.log('Введено сопроводительное письмо');
-
-                                    // Кликаем на кнопку "Откликнуться" для отправки формы
-                                    await page.click(responseSubmitSelector)
-                                    successfullySubmittedFormsCount++;
-                                    successfullySubmittedFormsIndexes.add(vacancyIndex);
-                                    console.log('Отправленных откликов:', successfullySubmittedFormsCount);
-                                } else {
-                                    console.log('Модальное окно находится по другому адресу');
-                                    continue;
-                                }
-                            } else {
-                                console.log('Возвращаемся назад.');
+                            if (isInvalidTextareaVisible || isInvalidRadioVisible) {
+                                console.log('Обнаружена ошибка в форме отклика');
+                                unsuccessfullySubmittedFormsCount++;
                                 await page.goBack({ waitUntil: 'domcontentloaded', timeout: 60000 });
                                 vacancyElementsSelector = await page.$$('[data-qa="vacancy-serp__vacancy_response"]');
-                                idx--;
+                                console.log('Предыдущая страница открыта');
+                            } else {
                                 successfullySubmittedFormsCount++;
-                                successfullySubmittedFormsIndexes.add(vacancyIndex);
-                                console.log('Новая страница открыта');
-                                continue;
                             }
+                            successfullySubmittedFormsIndexes.add(vacancyIndex);
+                            console.log('Отправленных откликов:', successfullySubmittedFormsCount);
+                            console.log('Неудачных откликов:', unsuccessfullySubmittedFormsCount);
+                            console.log('Осталось вакансий:', vacancyElementsSelector.length - successfullySubmittedFormsIndexes.add(vacancyIndex).length);
                         }
                     }
                 }
+            // Переходим на следующую страницу, только если все вакансии обработаны
 
-                if (idx < pages - 1) {
+                if (successfullySubmittedFormsCount + unsuccessfullySubmittedFormsCount === vacancyElementsSelector.length) {
                     const nextPageButtonHandle = await page.$('[data-qa="pager-next"]');
                     if (nextPageButtonHandle) {
+                        console.log('Переход на следующую страницу.');
                         await nextPageButtonHandle.click();
                         await page.waitForNavigation({ waitUntil: 'domcontentloaded' });
                         vacancyElementsSelector = await page.$$('[data-qa="vacancy-serp__vacancy_response"]');
+                        idx++;
                     } else {
                         console.log('Кнопка перехода на следующую страницу не найдена, возможно, это последняя страница.');
                         break;
@@ -196,9 +193,7 @@ dotenv.config();
             } catch (err) {
                 console.error('Ошибка во время обработки страницы:', err);
             }
-            idx++;
         }
-
         console.log(`Общее количество успешно отправленных форм: ${successfullySubmittedFormsCount}`);
         // Закрытие браузера
         await browser.close();
