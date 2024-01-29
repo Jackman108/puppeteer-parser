@@ -2,15 +2,49 @@ import puppeteer from 'puppeteer';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
+// Конфигурация браузера
+const browserConfig = {
+    headless: false,
+    executablePath: 'C:\\Program Files\\Google\\Chrome Dev\\Application\\chrome.exe',
+    args: ['--profile-directory=Profile 1', '--start-maximized']
+};
+
+// URL для поиска вакансий
+const vacanciesUrl = 'https://spb.hh.ru/search/vacancy?L_save_area=true&text=React+developer&search_field=name&excluded_text=&salary=&currency_code=RUR&experience=doesNotMatter&schedule=remote&order_by=salary_desc&search_period=30&items_on_page=20';
+
+// Функция для авторизации
+async function authorize(page) {
+    const email = process.env.MY_EMAIL;
+    await page.click('[data-qa="login"]');
+    await page.waitForSelector('[data-qa="account-signup-email"]', { visible: true });
+    await page.type('[data-qa="account-signup-email"]', email);
+    await page.click('[data-qa="account-signup-submit"]');
+}
+
+async function confirmCode(page) {
+    try {
+        console.log('Ожидание появления поля ввода OTP...');
+        const codeInputSelector = 'input[data-qa="otp-code-input"]';
+        await page.waitForSelector(codeInputSelector, { visible: true });
+
+        const otpCodeInput = await page.$(codeInputSelector);
+        await page.waitForFunction((input) => input.value.length === 4, {}, otpCodeInput);
+        console.log('Поле ввода OTP заполнено.');
+
+        const submitButtonSelector = '[data-qa="otp-code-submit"]';
+        await page.waitForSelector(submitButtonSelector, { visible: true });
+        await page.click(submitButtonSelector);
+        console.log('Подтверждение OTP выполнено.');
+    } catch (error) {
+        console.error('Ошибка при подтверждении входа:', error);
+        throw error; // Перебрасываем ошибку для обработки на более высоком уровне
+    }
+}
+
 (async () => {
     try {
         // Инициализация и настройка браузера
-        const browser = await puppeteer.launch({
-            headless: false,
-            executablePath: 'C:\\Program Files\\Google\\Chrome Dev\\Application\\chrome.exe',
-            args: ['--profile-directory=Profile 1', '--start-maximized']
-        });
-
+        const browser = await puppeteer.launch(browserConfig);
         const page = await browser.newPage();
         await page.setViewport({
             width: 1440,
@@ -18,9 +52,7 @@ dotenv.config();
             deviceScaleFactor: 1,
         });
 
-        // Переход на указанный URL
-        const url = 'https://spb.hh.ru/search/vacancy?L_save_area=true&text=React+developer&search_field=name&excluded_text=&salary=&currency_code=RUR&experience=doesNotMatter&schedule=remote&order_by=salary_desc&search_period=30&items_on_page=100';
-        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        await page.goto(vacanciesUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
 
         // Принятие cookies
@@ -28,36 +60,10 @@ dotenv.config();
         await page.click('[data-qa="cookies-policy-informer-accept"]');
 
         // Авторизация на сайте
-        const email = process.env.MY_EMAIL;
-        await page.click('[data-qa="login"]');
-        await page.waitForSelector('[data-qa="account-signup-email"]', { visible: true });
-        await page.type('[data-qa="account-signup-email"]', email);
-        await page.click('[data-qa="account-signup-submit"]');
+        await authorize(page);
 
         // Функция для подтверждения входа
-        async function codeSubmit() {
-            try {
-                console.log('Ожидание появления поля ввода...');
-                const codeInputSelector = 'input[data-qa="otp-code-input"]';
-                await page.waitForSelector(codeInputSelector, { visible: true });
-                const otpCodeInput = await page.$(codeInputSelector);
-
-                // Ожидаем, пока в поле ввода не появятся 4 символа
-                await page.waitForFunction((input) => input.value.length === 4, {}, otpCodeInput);
-
-                console.log('Поле ввода кода заполнено.');
-                const submitButtonSelector = '[data-qa="otp-code-submit"]';
-                await page.waitForSelector(submitButtonSelector, { visible: true });
-                const submitButton = await page.$(submitButtonSelector);
-                console.log('Клик по кнопке подтверждения...');
-                await submitButton.click();
-            } catch (error) {
-                console.error('Произошла ошибка во время ожидания навигации или выполнения функции:', error);
-            }
-        }
-        await codeSubmit();
-
-
+        await confirmCode(page);
 
         const coverLetter = `
                 Я обратил внимание на вашу вакансию и был бы рад присоединиться к вашей команде в качестве кандидата на эту должность. Я уверен, что мой опыт и навыки в сочетании с вашими ресурсами и профессионализмом могут принести взаимную выгоду.
@@ -91,6 +97,8 @@ dotenv.config();
                 if (vacancyElementsSelector.length > 0) {
 
                     for (let vacancyIndex = 0; vacancyIndex < vacancyElementsSelector.length; vacancyIndex++) {
+                        console.log('Всех вакансий:', vacancyElementsSelector.length);
+
                         const vacancy = vacancyElementsSelector[vacancyIndex];
                         const button = await vacancy.$('span');
                         const text = await page.evaluate(btn => btn.textContent, button);
@@ -171,24 +179,20 @@ dotenv.config();
                             successfullySubmittedFormsIndexes.add(vacancyIndex);
                             console.log('Отправленных откликов:', successfullySubmittedFormsCount);
                             console.log('Неудачных откликов:', unsuccessfullySubmittedFormsCount);
-                            console.log('Осталось вакансий:', vacancyElementsSelector.length - successfullySubmittedFormsIndexes.add(vacancyIndex).length);
+                            console.log('Осталось вакансий:', vacancyElementsSelector.length);
                         }
                     }
                 }
-            // Переходим на следующую страницу, только если все вакансии обработаны
-
-                if (successfullySubmittedFormsCount + unsuccessfullySubmittedFormsCount === vacancyElementsSelector.length) {
+                // Переходим на следующую страницу, только если все вакансии обработаны
+                if (idx < pages - 1) {
                     const nextPageButtonHandle = await page.$('[data-qa="pager-next"]');
                     if (nextPageButtonHandle) {
                         console.log('Переход на следующую страницу.');
                         await nextPageButtonHandle.click();
-                        await page.waitForNavigation({ waitUntil: 'domcontentloaded' });
+                        await page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 60000 });
                         vacancyElementsSelector = await page.$$('[data-qa="vacancy-serp__vacancy_response"]');
-                        idx++;
-                    } else {
-                        console.log('Кнопка перехода на следующую страницу не найдена, возможно, это последняя страница.');
-                        break;
-                    }
+                        idx++;                        
+                    } 
                 }
             } catch (err) {
                 console.error('Ошибка во время обработки страницы:', err);
