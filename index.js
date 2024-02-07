@@ -10,7 +10,7 @@ const browserConfig = {
 };
 
 // URL для поиска вакансий
-const vacanciesUrl = 'https://spb.hh.ru/search/vacancy?L_save_area=true&text=React+developer&search_field=name&excluded_text=&salary=&currency_code=RUR&experience=doesNotMatter&schedule=remote&order_by=salary_desc&search_period=30&items_on_page=20';
+const vacanciesUrl = 'https://hh.ru/search/vacancy?L_save_area=true&text=React+frontend&excluded_text=&salary=&currency_code=RUR&experience=doesNotMatter&schedule=remote&order_by=salary_desc&search_period=7&items_on_page=100';
 
 // Функция для авторизации
 async function authorize(page) {
@@ -94,6 +94,10 @@ async function confirmCode(page) {
                 await new Promise(r => setTimeout(r, 2000));
 
                 let vacancyElementsSelector = await page.$$('[data-qa="vacancy-serp__vacancy_response"]');
+                if (vacancyElementsSelector.length === 0) {
+                    console.log('Вакансии на странице не найдены. Завершение обработки.');
+                    break; // Выход из цикла, если вакансий нет
+                }
                 if (vacancyElementsSelector.length > 0) {
 
                     for (let vacancyIndex = 0; vacancyIndex < vacancyElementsSelector.length; vacancyIndex++) {
@@ -179,7 +183,7 @@ async function confirmCode(page) {
                             successfullySubmittedFormsIndexes.add(vacancyIndex);
                             console.log('Отправленных откликов:', successfullySubmittedFormsCount);
                             console.log('Неудачных откликов:', unsuccessfullySubmittedFormsCount);
-                            console.log('Осталось вакансий:', vacancyElementsSelector.length);
+                            console.log('Оставшихся вакансий:', vacancyElementsSelector.length - unsuccessfullySubmittedFormsCount-successfullySubmittedFormsCount);
                         }
                     }
                 }
@@ -191,8 +195,8 @@ async function confirmCode(page) {
                         await nextPageButtonHandle.click();
                         await page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 60000 });
                         vacancyElementsSelector = await page.$$('[data-qa="vacancy-serp__vacancy_response"]');
-                        idx++;                        
-                    } 
+                        idx++;
+                    }
                 }
             } catch (err) {
                 console.error('Ошибка во время обработки страницы:', err);
