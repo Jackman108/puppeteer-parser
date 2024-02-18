@@ -10,7 +10,7 @@ const browserConfig = {
 };
 
 // URL для поиска вакансий
-const vacanciesUrl = 'https://hh.ru/search/vacancy?text=REACT&salary=&schedule=remote&ored_clusters=true&items_on_page=100&order_by=salary_desc&search_field=name&search_period=7&excluded_text=&hhtmFrom=vacancy_search_list&hhtmFromLabel=vacancy_search_line';
+const vacanciesUrl = 'https://hh.ru/search/vacancy?L_save_area=true&text=Javascript+developer&excluded_text=&salary=&currency_code=RUR&experience=doesNotMatter&schedule=remote&order_by=relevance&search_period=7&items_on_page=100';
 
 // Функция для авторизации
 async function authorize(page) {
@@ -178,6 +178,15 @@ async function confirmCode(page) {
                 console.log(`Обрабатываем страницу ${idx + 1} из ${pages}`);
                 await new Promise(r => setTimeout(r, 2000));
 
+                const vacancyInputSelector = await page.$$('[data-qa="search-input"]');
+                const vacancySearch = 'Java Script'
+
+                // Вводим поиск вакансии
+                await page.type(vacancyInputSelector, vacancySearch);
+                console.log('Поиск по вакансии:', vacancySearch);
+
+                // Кликаем на кнопку "Откликнуться" для отправки формы
+                await page.click(responseSubmitSelector)
                 let vacancyElementsSelector = await page.$$('[data-qa="vacancy-serp__vacancy_response"]');
                 if (vacancyElementsSelector.length === 0) {
                     console.log('Вакансии на странице не найдены. Завершение обработки.');
@@ -188,9 +197,9 @@ async function confirmCode(page) {
                 for (let vacancyIndex = 0; vacancyIndex < vacancyElementsSelector.length; vacancyIndex++) {
                     await processVacancy(vacancyIndex, vacancyElementsSelector, page);
                     console.log('Всех вакансий:', vacancyElementsSelector.length);
-                    console.log('Обрабатываем вакансию:', vacancyIndex+1);
+                    console.log('Обрабатываем вакансию:', vacancyIndex + 1);
                     console.log('Отправленных откликов:', successfullySubmittedFormsCount);
-                    console.log('Неудачных откликов:', unsuccessfullySubmittedFormsCount);    
+                    console.log('Неудачных откликов:', unsuccessfullySubmittedFormsCount);
                 }
 
                 // Переходим на следующую страницу, только если все вакансии обработаны
