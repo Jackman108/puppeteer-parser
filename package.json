@@ -1,16 +1,17 @@
 {
   "name": "puppeteer-parser",
   "version": "1.0.0",
-  "description": "",
+  "description": "A Puppeteer-based web scraping project for processing vacancies.",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "puppeteer-parser"
+    "url": "https://github.com/Jackman108/puppeteer-parser.git"
   },
-  "author": "",
+  "author": "Eugene Korobov",
   "license": "ISC",
   "type": "module",
   "dependencies": {

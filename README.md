@@ -23,6 +23,21 @@ npm install
 
 MY_EMAIL=ваш_email@example.com
 
+Создайте файл `secrets.js` в корневой директории проекта со следующим содержимым:
+
+```bash
+
+export const personalData = {
+    vacanciesUrl: 'копируем url вакансий сайта с настроенными фильтрами',
+
+    vacancySearch: 'искомая должность',
+
+    coverLetter: 'сопроводительное письмо',
+
+    totalPages: количество страниц которые обработать(цифрой),
+};
+
+```
 
 ## Запуск скрипта
 
