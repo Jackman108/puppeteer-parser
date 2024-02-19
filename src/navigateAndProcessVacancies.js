@@ -26,7 +26,6 @@ export async function navigateAndProcessVacancies(page, counters) {
             
             for (let i = 0; i < vacancies.length; i++) {
                 const vacancy = vacancies[i];
-                console.log('Всех вакансий:', vacancies.length);
                 console.log('Отправленных откликов:', counters.successfullySubmittedCount);
                 console.log('Неудачных откликов:', counters.unsuccessfullySubmittedCount);
     

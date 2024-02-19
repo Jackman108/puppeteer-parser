@@ -1,16 +1,14 @@
 // src/processVacancy.js
 import { personalData } from "../secrets.js";
 
-
 // Функция для обработки вакансии
 export async function processVacancy(page, vacancy, counters) {
     try {
         const { coverLetter } = personalData;
 
         await new Promise(r => setTimeout(r, 1000));
-        console.log('click');
         await vacancy.click();
-        console.log('click2');
+
         // Селекторы для модального окна и кнопки "Все равно откликнуться"
         const relocationModalSelector = '.bloko-modal .bloko-modal-header [data-qa="relocation-warning-title"]';
         const confirmButtonSelector = '[data-qa="relocation-warning-confirm"]';
@@ -25,7 +23,7 @@ export async function processVacancy(page, vacancy, counters) {
             const modalContent = await page.evaluate(titleModal => titleModal.textContent, relocationModalHandle);
             if (modalContent.includes('Вы откликаетесь на вакансию в другой стране')) {
                 await page.click(confirmButtonSelector);
-                console.log('Нажата кнопка "Все равно откликнуться"');
+                console.log('Нажата кнопка "Всё равно откликнуться"');
             }
         }
 

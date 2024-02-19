@@ -16,6 +16,6 @@
                 vacanciesWithResponse.push(vacancy);
             }
         }
-
+        console.log('Найдено вакансий:', vacanciesWithResponse.length);
         return vacanciesWithResponse;
     }
