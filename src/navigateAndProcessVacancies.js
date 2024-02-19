@@ -5,10 +5,9 @@ import { personalData } from '../secrets.js';
 
 
 // Функция для навигации и обработки страниц с вакансиями
-export async function navigateAndProcessVacancies(page, successfullySubmittedFormsCount) {
+export async function navigateAndProcessVacancies(page, counters) {
     let currentPage = 0;
     const processedVacanciesIds = new Set();
-    let unsuccessfullySubmittedFormsCount = 0;
     const { totalPages } = personalData;
 
     while (currentPage < totalPages) {
@@ -24,13 +23,12 @@ export async function navigateAndProcessVacancies(page, successfullySubmittedFor
                 console.log('Вакансии на странице не найдены. Завершение обработки.');
                 break; // Выход из цикла, если вакансий нет
             }
-
             
             for (let i = 0; i < vacancies.length; i++) {
                 const vacancy = vacancies[i];
                 console.log('Всех вакансий:', vacancies.length);
-                console.log('Отправленных откликов:', successfullySubmittedFormsCount);
-                console.log('Неудачных откликов:', unsuccessfullySubmittedFormsCount);
+                console.log('Отправленных откликов:', counters.successfullySubmittedCount);
+                console.log('Неудачных откликов:', counters.unsuccessfullySubmittedCount);
     
                 const vacancyId = await page.evaluate(el => {
                     const href = el.getAttribute('href');
@@ -39,8 +37,8 @@ export async function navigateAndProcessVacancies(page, successfullySubmittedFor
                 }, vacancy);
 
                 if (vacancyId && !processedVacanciesIds.has(vacancyId)) {
-                    await processVacancy(page, vacancy, successfullySubmittedFormsCount, unsuccessfullySubmittedFormsCount);
                     processedVacanciesIds.add(vacancyId);
+                    await processVacancy(page, vacancy, counters);
                     console.log(`Обработка вакансии с ID ${vacancyId}`);
                 } else if (vacancyId) {
                     console.log(`Вакансия с ID ${vacancyId} уже была обработана. Пропускаем.`);
@@ -56,7 +54,6 @@ export async function navigateAndProcessVacancies(page, successfullySubmittedFor
             if (nextPageButtonHandle) {
                 console.log('Переход на следующую страницу.');
                 await nextPageButtonHandle.click();
-                await page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 60000 });
                 await new Promise(r => setTimeout(r, 1000));
                 currentPage++;
             } else {

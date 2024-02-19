@@ -10,8 +10,10 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 const { vacanciesUrl } = personalData;
-let successfullySubmittedFormsCount = 0;
-
+let counters = {
+    successfullySubmittedCount: 0,
+    unsuccessfullySubmittedCount: 0
+};
 (async () => {
     try {
         // Инициализация и настройка браузера
@@ -29,9 +31,9 @@ let successfullySubmittedFormsCount = 0;
         await authorize(page);
         await confirmCode(page);
         await searchForVacancy(page);
-        await navigateAndProcessVacancies(page, successfullySubmittedFormsCount);
+        await navigateAndProcessVacancies(page, counters);
 
-        console.log(`Общее количество успешно отправленных форм: ${successfullySubmittedFormsCount}`);
+        console.log(`Общее количество успешно отправленных форм: ${counters.successfullySubmittedCount}`);
         // Закрытие браузера
         await browser.close();
     } catch (err) {

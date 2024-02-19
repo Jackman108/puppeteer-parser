@@ -43,7 +43,7 @@ export const personalData = {
 
 Выполните скрипт командой:
 
-node index.js
+npm start
 
 
 ## Описание работы скрипта
