@@ -3,6 +3,7 @@ import puppeteer from 'puppeteer';
 import { browserConfig } from './config.js';
 import { personalData } from './secrets.js';
 import { authorize, confirmCode, searchForVacancy, navigateAndProcessVacancies } from './src';
+import { SELECTORS, TIMEOUTS } from './constants.js';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
@@ -17,10 +18,10 @@ let counters = {
         const browser = await puppeteer.launch(browserConfig);
         const page = await browser.newPage();
         await page.setViewport({ width: 1440, height: 1000, deviceScaleFactor: 1, });
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        await page.goto(vacanciesUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
-        await page.waitForSelector('[data-qa="cookies-policy-informer-accept"]', { visible: true });
-        await page.click('[data-qa="cookies-policy-informer-accept"]');
+        await new Promise(resolve => setTimeout(resolve, TIMEOUTS.SHORT));
+        await page.goto(vacanciesUrl, { waitUntil: 'domcontentloaded', timeout: TIMEOUTS.LONG });
+        await page.waitForSelector(SELECTORS.COOKIE_ACCEPT, { visible: true });
+        await page.click(SELECTORS.COOKIE_ACCEPT);
         await authorize(page);
         await confirmCode(page);
         await searchForVacancy(page);

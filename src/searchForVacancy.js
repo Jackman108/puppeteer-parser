@@ -1,15 +1,16 @@
 // src/searchForVacancy.js
 import { personalData } from '../secrets.js';
+import { SELECTORS, TIMEOUTS } from '../constants.js';
 
 // Функция для поиска вакансии
 export async function searchForVacancy(page) {
     const { vacancySearch } = personalData;
-    await new Promise(r => setTimeout(r, 2000));
+    await new Promise(r => setTimeout(r, TIMEOUTS.SHORT));
 
-    const vacancyInputSelector = await page.$('#a11y-search-input');
+    const vacancyInputSelector = await page.$(SELECTORS.VACANCY_INPUT);
 
     // Очистка содержимого поля ввода
-    await page.$eval('#a11y-search-input', input => {
+    await page.$eval(SELECTORS.VACANCY_INPUT, input => {
         input.value = '';
     });
 

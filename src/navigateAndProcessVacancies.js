@@ -2,13 +2,14 @@
 import { processVacancy } from './processVacancy.js';
 import { getVacancies } from './getVacancies.js';
 import { personalData } from '../secrets.js';
+import { SELECTORS, TIMEOUTS } from '../constants.js';
 
 
 // Функция для навигации и обработки страниц с вакансиями
 export async function navigateAndProcessVacancies(page, counters) {
     let currentPage = 0;
-    const processedVacanciesIds = new Set();
     const { totalPages } = personalData;
+    const processedVacanciesIds = new Set();
 
     while (currentPage < totalPages) {
         try {
@@ -16,12 +17,12 @@ export async function navigateAndProcessVacancies(page, counters) {
             console.log(`Обрабатываем страницу ${currentPage + 1} из ${totalPages}`);
 
             // Задержка для стабилизации контента
-            await new Promise(r => setTimeout(r, 2000));
+            await new Promise(r => setTimeout(r, TIMEOUTS.SHORT));
             let vacancies = await getVacancies(page);
 
             if (vacancies.length === 0) {
                 console.log('Вакансии на странице не найдены. Завершение обработки.');
-                break; // Выход из цикла, если вакансий нет
+                break; 
             }
             
             for (let i = 0; i < vacancies.length; i++) {
@@ -49,11 +50,11 @@ export async function navigateAndProcessVacancies(page, counters) {
             }
 
             // Переходим на следующую страницу, только если все вакансии обработаны
-            const nextPageButtonHandle = await page.$('[data-qa="pager-next"]');
+            const nextPageButtonHandle = await page.$(SELECTORS.PAGER_NEXT);
             if (nextPageButtonHandle) {
                 console.log('Переход на следующую страницу.');
                 await nextPageButtonHandle.click();
-                await new Promise(r => setTimeout(r, 1000));
+                await new Promise(r => setTimeout(r, TIMEOUTS.SHORT));
                 currentPage++;
             } else {
                 console.log('Вакансии на последней странице обработаны.');

@@ -1,9 +1,11 @@
 // src/authorize.js
+import { SELECTORS } from '../constants.js';
+
 // Функция для авторизации
 export async function authorize(page) {
     const email = process.env.MY_EMAIL;
-    await page.click('[data-qa="login"]');
-    await page.waitForSelector('[data-qa="account-signup-email"]', { visible: true });
-    await page.type('[data-qa="account-signup-email"]', email);
-    await page.click('[data-qa="account-signup-submit"]');
+    await page.click(SELECTORS.LOGIN);
+    await page.waitForSelector(SELECTORS.EMAIL_INPUT, { visible: true });
+    await page.type(SELECTORS.EMAIL_INPUT, email);
+    await page.click(SELECTORS.EMAIL_SUBMIT);
 }
