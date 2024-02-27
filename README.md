@@ -13,9 +13,10 @@ git clone https://github.com/Jackman108/puppeteer-parser.git
 2. Перейдите в директорию проекта:
 cd puppeteer-parser
 
-3. Установите зависимости:
+3. Установите и обновите зависимости:
 npm install
 
+npm update
 
 ## Конфигурация
 

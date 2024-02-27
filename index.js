@@ -2,10 +2,14 @@
 import puppeteer from 'puppeteer';
 import { browserConfig } from './config.js';
 import { personalData } from './secrets.js';
-import { authorize, confirmCode, searchForVacancy, navigateAndProcessVacancies } from './src';
+import { authorize } from './src/authorize.js';
+import { confirmCode } from './src/confirmCode.js';
+import { searchForVacancy } from './src/searchForVacancy.js';
+import { navigateAndProcessVacancies } from './src/navigateAndProcessVacancies.js';
 import { SELECTORS, TIMEOUTS } from './constants.js';
 import * as dotenv from 'dotenv';
 dotenv.config();
+
 
 const { vacanciesUrl } = personalData;
 let counters = {

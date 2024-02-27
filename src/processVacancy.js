@@ -61,17 +61,18 @@ export async function processVacancy(page, vacancy, counters) {
         // Кликаем на кнопку "Откликнуться" для отправки формы
         await page.click(responseSubmitSelector)
         console.log('Отправки формы на вакансию:');
+        await new Promise(resolve => setTimeout(resolve, TIMEOUTS.SHORT));
 
         // Добавляем условия для проверки наличия ошибок в форме отклика
-        const isInvalidTextareaVisible = await page.evaluate(() => {
+        const isInvalidTextareaVisible = await page.evaluate((SELECTORS) => {
             const textarea = document.querySelector(SELECTORS.BLOK_TEXTAREA);
             return textarea && textarea.classList.contains(SELECTORS.TEXTAREA_INVALID);
-        });
+        }, SELECTORS);
 
-        const isInvalidRadioVisible = await page.evaluate(() => {
+        const isInvalidRadioVisible = await page.evaluate((SELECTORS) => {
             const radioLabel = document.querySelector(SELECTORS.BLOK_RADIO);
             return radioLabel && radioLabel.classList.contains(SELECTORS.RADIO_INVALID);
-        });
+        }, SELECTORS);
 
         // Проверяем наличие ошибок в форме отклика
         if (isInvalidTextareaVisible || isInvalidRadioVisible) {
