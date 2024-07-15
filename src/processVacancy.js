@@ -1,14 +1,15 @@
 // src/processVacancy.js
 import { personalData } from "../secrets.js";
 import { SELECTORS, TIMEOUTS } from '../constants.js';
+import { saveVacancy } from '../db.js';
 
 // Функция для обработки вакансии
-export async function processVacancy(page, vacancy, counters) {
+export async function processVacancy(page, vacancyResponse, data, counters) {
     try {
         const { coverLetter } = personalData;
 
         await new Promise(r => setTimeout(r, TIMEOUTS.SHORT));
-        await vacancy.click();
+        await vacancyResponse.click();
 
         // Селекторы для модального окна и кнопки "Все равно откликнуться"
         const relocationModalSelector = SELECTORS.RELOCATION_MODAL_TITLE;
@@ -73,15 +74,27 @@ export async function processVacancy(page, vacancy, counters) {
             const radioLabel = document.querySelector(SELECTORS.BLOK_RADIO);
             return radioLabel && radioLabel.classList.contains(SELECTORS.RADIO_INVALID);
         }, SELECTORS);
+        
+        const isInvalidCheckboxVisible = await page.evaluate((SELECTORS) => {
+            const radioLabel = document.querySelector(SELECTORS.BLOCK_CHECKBOX);
+            return radioLabel && radioLabel.classList.contains(SELECTORS.BLOCK_CHECKBOX_INVALID);
+        }, SELECTORS);
 
         // Проверяем наличие ошибок в форме отклика
-        if (isInvalidTextareaVisible || isInvalidRadioVisible) {
+        if (isInvalidTextareaVisible || isInvalidRadioVisible || isInvalidCheckboxVisible) {
             console.log('Обнаружена ошибка в форме отклика');
             counters.unsuccessfullySubmittedCount++;
             await page.goBack({ waitUntil: 'domcontentloaded', timeout: TIMEOUTS.LONG });
             console.log('Предыдущая страница открыта');
+
+             // Сохраняем вакансию с флагом N
+             await saveVacancy(data);
+             console.log(`Вакансия с ID ${data.id} сохранена с флагом N`);
         } else {
             counters.successfullySubmittedCount++;
+            data.vacancyStatus = true;
+            await saveVacancy(data);
+            console.log(`Вакансия с ID ${data.id} сохранена с флагом Y`);
         }
     } catch (error) {
         console.error('Ошибка во время обработки вакансии:', error);

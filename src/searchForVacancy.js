@@ -5,7 +5,7 @@ import { SELECTORS, TIMEOUTS } from '../constants.js';
 // Функция для поиска вакансии
 export async function searchForVacancy(page) {
     const { vacancySearch } = personalData;
-    await new Promise(r => setTimeout(r, TIMEOUTS.SHORT));
+    await new Promise(r => setTimeout(r, TIMEOUTS.SEARCH));
 
     const vacancyInputSelector = await page.$(SELECTORS.VACANCY_INPUT);
 
